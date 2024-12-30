@@ -1,34 +1,102 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState ,useRef } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
 import { geoData } from "./geoData";
-
-
+import { useNavigate } from 'react-router-dom';
+// import { use } from "react";
+import { Doughnut, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+ChartJS.register(ArcElement, Tooltip, Legend);
+import '../styles/global.css';
 
 const Map = () => {
-
-
- 
-
-  // Sample GeoJSON Data
   const [geoJsonData, setGeoJsonData] = useState(null);
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState([]);
+  const messagesRef = useRef([]);
+  
+  const [totalDevices,setTotalDevices]=useState( { active: 0, inactive: 0 });
+  const[chartData,SetChartData]=useState({
+    labels: ['Active', 'Inactive'],
 
+    datasets: [
+      {
+        data: [0, 0],
+        backgroundColor: ['#4caf50', '#f44336'],
+        hoverBackgroundColor: ['#388e3c', '#d32f2f'],
+      },
+    ],
+  });
+  
   useEffect(() => {
-    // Fetching the GeoJSON file placed in the public folder
     setGeoJsonData(geoData);
-
-    
-    // console.log("data about to be fetch");
-    // fetch("/Himachal-pradesh.geojson")
-    //   .then((response) => response.json())
-    //   .then((data) => setGeoJsonData(data))
-    //   .catch((error) => console.error("Error loading GeoJSON:", error));
-      
   }, []);
 
 
+  
 
-  // Styling the GeoJSON polygons
+  useEffect(() => {
+    let socket = new WebSocket('ws://localhost:8619/dashboard');
+    socket.onopen = () => {
+      console.log('WebSocket connected success');
+    };
+  
+    socket.onmessage = (event) => {
+      
+      try {      
+        console.log(`WebSocket recived a message ${event.data}`);
+         const data=JSON.parse(event.data);
+         console.log(`WebSocket recived a message ${data}`);
+        setMessages(data);  
+        
+      } catch (error) {
+        console.log("error",error);
+      }
+    };
+  
+    socket.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+  
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+
+
+  
+  useEffect(()=>{
+    const data=messagesRef.current;
+    const totalDevice = data.reduce((acc, item) => {
+      acc.active += item.active_devices;
+      acc.inactive += item.inactive_devices;
+      return acc;
+    }, { active: 0, inactive: 0 });
+    
+    setTotalDevices(totalDevice);
+    const chartDataLocal = {
+      labels: ['Active', 'Inactive'],
+  
+      datasets: [
+        {
+          data: [totalDevice.active, totalDevice.inactive],
+          backgroundColor: ['#4caf50', '#f44336'],
+          hoverBackgroundColor: ['#388e3c', '#d32f2f'],
+        },
+      ],
+    };
+     SetChartData(chartDataLocal);
+// component two
+
+  },[messages]);
+
+
   const geoJsonStyle = {
     color: "red",
     weight: 2,
@@ -36,82 +104,144 @@ const Map = () => {
     fillOpacity: 0.5,
   };
 
-
-  // Add popups to GeoJSON features
   const onEachFeature = (feature, layer) => {
     if (feature.properties && feature.properties.district) {
       layer.bindPopup(`<b>District: </b>${feature.properties.district}`);
+      const districtName = feature.properties.district;
+  
+      // Add hover event to change color and show tooltip
+      layer.on({
+        mouseover: (e) => {
+              const data=messagesRef.current;      
+          const currDistrict = data.find(
+            (item) => feature.properties.district.toLowerCase() === item.district.toLowerCase()
+          );
+
+          const deviceInfo = { 
+            active: currDistrict.active_devices, 
+            inactive: currDistrict.inactive_devices 
+          };
+            const tooltipContent = `
+            <b>District:</b> ${districtName}<br />
+            <b>Active Devices:</b> ${deviceInfo.active}<br />
+            <b>Inactive Devices:</b> ${deviceInfo.inactive}`;
+          layer.bindTooltip(tooltipContent, {
+            sticky: true,
+            direction: "top",
+            offset: [0, -10],
+          }).openTooltip(e.latlng);
+  
+          // // Change the style on hover
+          // layer.setStyle({
+          //   fillColor: "black", // Set fill color to black
+          //   color: "black",     // Set border color to black
+          //   weight: 2,
+          //   fillOpacity: 0.7,
+          // });
+
+          layer.bringToFront();
+
+        },
+        mouseout: () => {
+          layer.closeTooltip(); // Close the tooltip when the mouse leaves the layer
+  
+          // Reset to default style
+          // layer.setStyle(defaultStyle);
+        },
+      }); 
+
+      // Add a click event to each district polygon
+      layer.on('click', () => handleDistrictClick(feature));
     }
   };
 
-  
   const style = (feature) => {
-    // Define color logic based on district properties (for example, district name)
-    let fillColor = 'transparent'; // Default color (no fill)
-    let borderColor = '#000'; // Default border color
+    let fillColor = 'transparent';
+    let borderColor = '#000';
+  
+    // Find the current district's data
 
-    if (feature.properties && feature.properties.district) {
-      switch (feature.properties.district) {
-        case 'Lahaul and Spiti':
-          fillColor = '#FF5733'; // Red color for Lahaul and Spiti
-          borderColor = '#C70039'; // Darker red for border
-          break;
-        case 'Kullu':
-          fillColor = '#33FF57'; // Green color for Kullu
-          borderColor = '#28A745'; // Darker green for border
-          break;
-        // Add more districts with different colors here
-        default:
-          fillColor = '#B0C4DE'; // Light grey for unspecified districts
-          borderColor = '#4682B4'; // Blue border for unspecified
+    const currDistrict = messages.find(
+      (item) => feature.properties.district.toLowerCase() === item.district.toLowerCase()
+    );
+  
+    if (currDistrict) {
+      const totalDevices = currDistrict.active_devices + currDistrict.inactive_devices;
+      const percentage = totalDevices > 0 
+        ? (currDistrict.active_devices * 100) / totalDevices 
+        : 0; // Handle division by zero if no devices
+  
+      if (percentage >= 75) {
+        
+        fillColor = '#33FF57'; // Green for high connectivity
+          borderColor = '#28A745';
+      } else if (percentage >= 50) {
+        fillColor = '#FFD700'; // Yellow for moderate connectivity
+        borderColor = '#FFD700';          
+      } else if (percentage >= 0) {
+        fillColor = '#FF5733'; // Red for low connectivity
+        borderColor = '#C70039';
+      } else {
+        fillColor = '#B0C4DE'; // Grey for no connectivity
+        borderColor = '#B0C4DE';
       }
+  
+       // Keep border consistent
+    } else {
+      // Default color for districts without data
+      fillColor = '#B0C4DE'; // Light blue
+      borderColor = '#4682B4'; // Steel blue
     }
-
+  
     return {
       fillColor: fillColor,
-      color: borderColor, // Border color
-      weight: 2,          // Border thickness
+      color: borderColor,
+      weight: 2,
       opacity: 1,
-      fillOpacity: 0.6,   // Opacity of the district color
+      fillOpacity: 0.6,
     };
+  };
+  
+
+  const handleDistrictClick = (feature) => {
+    if (feature.properties && feature.properties.district) {
+      const districtName = feature.properties.district;
+      navigate(`/district/${districtName}`);
+    }
   };
 
 
 
+  const clickedLog=(log)=>{
+    if(log){
+    navigate(`/district/${log.district}`);
+    }
+  };
+
+
+  
+
+ 
+
   return (
-
-   
-    <MapContainer
-      center={  [31.957851,
-        77.109459]} // Initial map center (Himachal Pradesh)
-      zoom={8}
-      zoomControl={false} // Disable zoom controls
-      scrollWheelZoom={false} // Disable scroll wheel zoom
-      touchZoom={false} // Disable touch zoom (on mobile devices)
-      dragging={false}
-      doubleClickZoom={false} // Disable double-click zoom
-
-      style={{ height: "700px", width: "800px" }}
-    >
-      {/* Add OpenStreetMap tiles */}
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-        tileSize={256}
-        
-        zoomControl={false}
-        noWrap
-        opacity={0}
-        touchZoom={false} // Disable touch zoom (on mobile devices)
-        scrollWheelZoom={false} // Disable scroll wheel zoom
-        dragging={false}
-
-
-      />
+    <div className="main-container">
+    
+    <div className="grids-container">
+    <div className="map-col">
+     <MapContainer
+        center={[31.957851, 77.109459]}
+         zoom={8}
+         zoomControl={false}
+         scrollWheelZoom={false}
+         touchZoom={false}
+          dragging={false}
+          doubleClickZoom={false}
+          style={{ height: "100%", width: "100%",position:"relative",backgroundColor:"white" }}
+      >
 
      <div
         style={{
-          position: 'absolute',
+          position: 'relative',
           top: 0,
           left: 0,
           right: 0,
@@ -120,16 +250,68 @@ const Map = () => {
           zIndex: 0,
         }}
       />
-      {/* Add GeoJSON Layer when data is loaded */}
-      {geoJsonData && (
-        <GeoJSON
-          data={geoJsonData}
-          style={style}
-          onEachFeature={onEachFeature}
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+          tileSize={256}
+          zoomControl={false}
+          noWrap
+          opacity={0}
+          touchZoom={false}
+          scrollWheelZoom={false}
+          dragging={false}
         />
-      )}
-    </MapContainer>
+
+        {geoJsonData && (
+          <GeoJSON
+            data={geoData}
+            style={style}
+            onEachFeature={onEachFeature}
+          />
+        )}
+      </MapContainer>
+    </div>
+    <div className="col-2-container">
+
+    <div className="piechart">
+    
+      <h3>Total Network Status</h3>
+      <Doughnut data={chartData} />
+      <h4>Total Devices: {totalDevices.active + totalDevices.inactive}</h4> 
+      <h4>Network Stability: {(totalDevices.active*100/(totalDevices.active + totalDevices.inactive)).toFixed(2)}%</h4>
+  
+    </div>
+</div>
+    </div>
+    <div className="row-2">
+    <div className="log">
+    <div className="log-list">
+      <h2>Network Over The Districts</h2>
+  <ul>
+    <li className="head-li">
+      <div>District Name</div>
+      <div>Active Devices</div>
+      <div>Inactive Devices</div>
+      <div>Up Percentange</div>
+    </li>
+    {messagesRef.current.map((log) => (
+    <li key={log.district} onClick={() => clickedLog(log)}>     
+      <div>{log.district}</div>
+      <div>{log.active_devices}</div>
+      <div>{log.inactive_devices}</div>
+      <div>{(log.active_devices * 100 / (log.active_devices + log.inactive_devices)).toFixed(2)}%</div>
+    </li>
+  ))}
+  </ul>
+  {/* {loading && <div>Loading logs...</div>}
+  {error && <div>{error}</div>} */}
+</div>
+     </div>
+    </div>
+  </div>
   );
 };
 
 export default Map;
+
+

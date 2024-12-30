@@ -1,0 +1,193 @@
+ #root{
+  margin: 0;
+  padding: 0;
+ }
+
+ body{
+  width: 100vw;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+    overflow-x: hidden;
+  
+ }
+  
+  .main-container{
+       width: 100vw;
+       display: grid;
+       grid-template-columns: 1fr;
+       justify-content: center;
+       align-content: center;
+  }
+  .grids-container{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    width: 96%;
+    height: 90vh;
+    padding: 10px;
+    margin: 0 auto;
+    margin-top: 50px;
+    gap: 20px; 
+   
+  }
+
+  .col-2-container{
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 400px;
+    gap: 10px;
+    justify-content: center;
+    align-content: center;
+  }
+
+  
+  .piechart{
+    width: 70%;
+    height: auto;
+    margin-left:20px;
+    padding: 20px;
+    justify-content: center;
+    align-content: center;
+    background-color:#fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(31, 25, 97, 0.1);
+  
+  }
+
+  .row-2{
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 96%;
+    padding: 10px;
+    margin: 0 auto;
+    height: auto;
+    background-color:#fff;
+    
+    
+    
+  }
+  .log{
+    width: 100%;
+    min-height: 500px;
+    margin: auto;
+   
+  }
+
+  .log-list {
+  
+    padding: 20px;
+    text-align: center;
+    height: 500px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  
+  .log-list ul {
+    list-style: none;
+    padding: 10px;
+    margin: 10px;
+   
+
+   }
+  
+  .log-list li {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    padding: 10px;
+    justify-content: center;
+    align-content: center;
+    text-align: center;
+
+    /* border-bottom: 1px solid #ddd; */
+  }
+  
+  .log-list li:hover{
+    background-color: azure;
+    cursor: pointer;
+  }
+
+  .map-col{
+    height: 100%;
+    width: 100%;
+  }
+
+  .head-li{
+    font-weight: bold;
+    background-color: azure;
+    cursor: none;
+  }
+
+.piechart h4{
+  margin: 0;
+}
+
+.container-grid-district{
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0 auto;
+  margin-top: 50px;
+  width: 100%;
+  height: 100%;
+}
+
+.topComponent{
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  padding: 10px;
+  gap: 10px;
+  justify-content: center;
+    align-content: center;
+}
+
+.district-log{
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(31, 25, 97, 0.1);
+  
+}
+
+.selected{
+  background-color: aqua;
+}
+
+.bottomComponents{
+  display: grid;
+  grid-template-columns: 1fr .5fr 1fr;
+  gap:10px;
+  justify-content: center;
+    align-content: center;
+    margin-left: 80px;
+}
+
+.device-logs{
+  margin-top: 0px;
+  overflow-y: auto;
+}
+
+.date-filter{
+  display: inline-block;
+  margin-left: 30px;
+  margin-top: 30px;
+  font-weight: bold;
+}
+
+.head-3{
+  display: inline-block;
+    margin-right: 10px;
+}
+
+.centerComponent{
+  text-align: center;
+  height: 600px;
+}
+
+h1{
+  text-align: center;
+}
+
+.date-select{
+  margin-left: 20px;
+  padding: 5px;
+  font-weight: 200;
+}

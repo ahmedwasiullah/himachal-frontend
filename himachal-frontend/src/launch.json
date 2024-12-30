@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Debug Vite",
+        "script": "${workspaceFolder}/node_modules/vite/bin/vite.js",
+        "args": ["--debug"],
+        "env": {
+          "DEBUG": "vite:*"
+        },
+        "console": "integratedTerminal"
+      }
+    ]
+  }
+  
