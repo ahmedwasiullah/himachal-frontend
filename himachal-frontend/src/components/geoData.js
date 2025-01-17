@@ -5,7 +5,7 @@ export const geoData={
             "type": "Feature",
             "properties": {
                 "dt_code": "025",
-                "district": "Lahaul and Spiti",
+                "district": "Lahaul & Spiti",
                 "st_code": "02",
                 "year": "2011_c",
                 "st_nm": "Himachal Pradesh"
@@ -5830,7 +5830,7 @@ export const geoData={
             "type": "Feature",
             "properties": {
                 "dt_code": "032",
-                "district": "Sirmaur",
+                "district": "Sirmour",
                 "st_code": "02",
                 "year": "2011_c",
                 "st_nm": "Himachal Pradesh"

@@ -10,12 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bootstrap": "^5.3.3",
     "chart.js": "^4.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
+    "react-lite-month-picker": "^1.2.19",
     "react-router-dom": "^7.0.2",
     "socket.io-client": "^4.8.1"
   },

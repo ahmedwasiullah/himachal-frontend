@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pie } from 'react-chartjs-2';
+import { Doughnut,Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import DeviceData from './DeviceData';
-
-
+import BarGrarph from './BarGraph';
+import MPicker from './MPicker';
+import '../styles/global.css';
 ChartJS.register(ArcElement, Tooltip, Legend);
+const apiUrlws = import.meta.env.VITE_API_URL_WS;
 
 const DistrictPage = () => {
   const {districtName} = useParams();
@@ -14,17 +16,27 @@ const DistrictPage = () => {
   const messageRef=useRef(null);
   const[logs,setLogs]=useState([]);
   const [totalDevices,setTotalDevices]=useState( { active: 0, inactive: 0 });
-  const [selectedLog,setSelectedLog]= useState("");  
-  // const selectedLogRef=useRef(null);
+  const [selectedLog,setSelectedLog]= useState(""); 
+  const[selectedDate,setSelectedDate]=useState({
+    month: new Date().getMonth()+1,
+    year: new Date().getFullYear(),
+  }); 
+  const [waitingToReconnect, setWaitingToReconnect] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const socketRef = useRef(null); 
   useEffect(() => {
-      let socket = new WebSocket(`ws://localhost:8619/dashboard/${districtName}`);
+    if(!socketRef.current){
+      let socket = new WebSocket(`${apiUrlws}/dashboard/${districtName}`);
+      socketRef.current=socket;
+      window.socket=socket;
       socket.onopen = () => {
-        console.log('WebSocket connected success');
+        // console.log('WebSocket connected success');
+        setIsOpen(true);
       };
 
       socket.onmessage = (event) => {        
         try {      
-          console.log(`WebSocket recived a message ${event.data}`);
+          // console.log(`WebSocket recived a message ${event.data}`);
            const data=JSON.parse(event.data);
             setMessages(data);  
         } catch (error) {
@@ -33,14 +45,20 @@ const DistrictPage = () => {
       };
     
       socket.onclose = () => {
-        console.log('WebSocket disconnected');
+        setIsOpen(false);
+        console.log('ws closed');
+        setWaitingToReconnect(true);
+        setTimeout(() => setWaitingToReconnect(null), 500); 
       };
     
       return () => {
+        socketRef.current=null;
         socket.close();
-      };
+      };  
+    }
+      
     
-  }, []);
+  }, [waitingToReconnect]);
 
 
   useEffect(()=>{
@@ -63,7 +81,7 @@ const DistrictPage = () => {
       datasets: [
         {
           data: [totalDevices.active, totalDevices.inactive],
-          backgroundColor: ['#4caf50', '#f44336'],
+          backgroundColor: ['#388e3c', '#d32f2f'],
           hoverBackgroundColor: ['#388e3c', '#d32f2f'],
         },
       ],
@@ -74,11 +92,16 @@ const DistrictPage = () => {
 
 
   const clickedLog= (log)=>{
-    console.log("log is clicked");
+    // console.log("log is clicked");
     setSelectedLog(log.name);
-    console.log(`${selectedLog} is selected`);
+    // console.log(`${selectedLog} is selected`);
   };
 
+  const dateClicked=(date)=>{
+    setSelectedDate(date);
+    // console.log(selectedDate);
+
+  }
   const dateConverter = (timeStamp) => {
     const date = new Date(timeStamp);
     const humanReadableDate = date.toLocaleString('en-IN', {
@@ -95,20 +118,23 @@ const DistrictPage = () => {
   };
   
   
+  
+  
+  
 
   return (
     <>
       <button onClick={goHome} style={{ position: 'absolute', top: 10, left: 10 }}>Home</button>
-      
+     
       <div className='container-grid-district'>
-      <h1>{districtName} District</h1>
+      <h1>{districtName}</h1>
         <div className='topComponent'>
          {/* top component has two columns */}
              <div className="piechart">
                <h3>Network Status</h3>
-               <Pie data={chartData} />
-               <div>Total Devices: {totalDevices.active + totalDevices.inactive}</div>
-               <div>Network Stability: {(totalDevices.active*100/(totalDevices.active + totalDevices.inactive)).toFixed(2)}%</div>
+               <Doughnut data={chartData} />
+               <div><b>Total Devices: {totalDevices.active + totalDevices.inactive}</b></div>
+               <div><b>Network Stability: {(totalDevices.active*100/(totalDevices.active + totalDevices.inactive)).toFixed(2)}%</b></div>
              </div>
              <div className="log district-log">
              <div className="log-list">
@@ -145,6 +171,14 @@ const DistrictPage = () => {
           <div>
             {selectedLog && <DeviceData selectedLog={selectedLog} districtName={districtName} />}
           </div>
+         </div>
+
+         <div className='bargraphComponent'>
+         <div className='graph'>
+             {selectedLog && <MPicker datePicked={dateClicked}/>}
+            {selectedLog && <BarGrarph selectedLog={selectedLog} districtName={districtName} selectedDate={selectedDate} />}
+          </div>
+              
          </div>
         
       </div>

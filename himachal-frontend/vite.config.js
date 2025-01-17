@@ -11,6 +11,7 @@ export default defineConfig({
         ws: true,  // Enable WebSocket support
         changeOrigin: true,  // Change the origin of the request
       },
-    },
+    },    
+    port: 5173, 
   },
 });

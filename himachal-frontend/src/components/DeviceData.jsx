@@ -5,6 +5,7 @@ import { Doughnut, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+const apiUrl = import.meta.env.VITE_API_URL;
 
 function DeviceData({ selectedLog, districtName }) {
   const [deviceData, setDeviceData] = useState({
@@ -19,12 +20,13 @@ function DeviceData({ selectedLog, districtName }) {
 
   useEffect(() => {
     if (selectedLog) {
-      console.log(`${selectedLog} is coming down as props`);
       setSelectedDevice(selectedLog); // Use `selectedLog` directly
     }
 
     if (selectedDevice) {
-      const url = `http://localhost:8619/fetch/${districtName}?deviceName=${selectedDevice}&days=${days}`;
+           const encodedDistrict = encodeURIComponent(districtName);
+           const selectedDeviceEnc=encodeURIComponent(selectedDevice);
+      const url = `${apiUrl}/fetch/${encodedDistrict}?deviceName=${selectedDeviceEnc}&days=${days}`;
 
       const fetchDeviceData = async () => {
         try {
@@ -34,7 +36,6 @@ function DeviceData({ selectedLog, districtName }) {
           }
           
           const data = await response.json();
-          console.log(data);
           setSelectedDeviceLogs(data.logs);
           setDeviceData({
             totalUpTime: data.performanceDeviceData.upTime / 3600,
@@ -121,7 +122,7 @@ function DeviceData({ selectedLog, districtName }) {
 
   const handleDaysChanged = (newDays) => {
     setDays(newDays);
-    console.log('Selected days:', newDays);
+    // console.log('Selected days:', newDays);
   };
 
   return (
@@ -160,14 +161,16 @@ function DeviceData({ selectedLog, districtName }) {
           <h3>
             {selectedDevice} Historical Data of last ({days}) days
           </h3>
-          <Doughnut data={chartDataUD} chartOptions={chartOptions}/>
+          <Doughnut data={chartDataUD}/>
           <div>
+            <b>
             Stability of device:{' '}
             {(
               (deviceData.noOfUp * 100) /
               (deviceData.noOfUp + deviceData.noOfDown)
             ).toFixed(2)}
             %
+            </b>
           </div>
         </div>
        
@@ -177,14 +180,16 @@ function DeviceData({ selectedLog, districtName }) {
           <h3>
             {selectedDevice} Data In Terms of Hours of past ({days}) days
           </h3>
-          <Pie data={chartDataUT} />
+          <Doughnut data={chartDataUT} />
           <div>
+            <b>
             Performance:{' '}
             {(
               (deviceData.totalUpTime * 100) /
               (deviceData.totalUpTime + deviceData.totalDownTime)
             ).toFixed(2)}
             %
+            </b>
           </div>
         </div>
       </div>
